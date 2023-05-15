@@ -190,7 +190,70 @@ class Partition {
   }
   
   function bestFit() {
-    
+    const copyPartitions = [...partitions]
+    const copyProcesses = [...processes]
+  
+    function findTheClosestPartition(processSize: number): Partition {
+      let closestPartition: Partition | undefined
+      const closestPartitions: Partition[] = []
+  
+      for (let i = 0; i < copyPartitions.length; i++) {
+        if (copyPartitions[i].size === processSize) {
+          closestPartition = copyPartitions[i]
+          break
+        }
+        if (copyPartitions[i].size >= processSize) {
+          closestPartitions.push(copyPartitions[i])
+        }
+      }
+  
+      if (!closestPartition) {
+        closestPartition = closestPartitions[0]
+        for (let i = 1; i < closestPartitions.length; i++) {
+          if (closestPartitions[i].size < closestPartition.size) {
+            closestPartition = closestPartitions[i]
+          }
+        }
+        
+      }
+  
+      return closestPartition
+    }
+  
+    while(true) {
+      const closestPartitionIndex = partitions.findIndex(partition => partition === findTheClosestPartition(copyProcesses[0].size))
+      const actualProcessIndex = processes.findIndex(process => process === copyProcesses[0])
+  
+      partitions[closestPartitionIndex].process = processes[actualProcessIndex]
+      processes[actualProcessIndex].partition = partitions[closestPartitionIndex]
+  
+      const auxClosestPartitionIndex = copyPartitions.findIndex(partition => partition === findTheClosestPartition(copyProcesses[0].size))
+  
+      copyPartitions.splice(auxClosestPartitionIndex, 1)
+      copyProcesses.shift()
+  
+      if (copyProcesses.length === 0) break
+    }
+  
+    const processTableData: ProcessTableData[] = []
+    const partitionTableData: PartitionTableData[] = []
+  
+    processes.map(process => {
+      processTableData.push({
+        "ID do Processo": process.id,
+        "Tamanho do Processo": process.size
+      })
+    })
+  
+    partitions.map(partition => {
+      partitionTableData.push({
+        "Partição": partition.size,
+        "ID do Processo": partition.process?.id ? partition.process?.id : "..."
+      })
+    })
+  
+    console.table(processTableData)
+    console.table(partitionTableData)
   }
 
   function worstFit() {
