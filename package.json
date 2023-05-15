@@ -1,5 +1,10 @@
 {
   "name": "memory-management-algorithms",
+  "author": {
+    "name": "ZaikoXander",
+    "email": "alexdaniel.lima28@gmail.com",
+    "url": "https://github.com/ZaikoXander"
+  },
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
