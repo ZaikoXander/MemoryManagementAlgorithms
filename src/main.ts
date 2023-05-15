@@ -1,17 +1,14 @@
 import prompts from "prompts"
-import consola from "consola"
 import { randomUUID } from "crypto"
-
-const log = console.log
 
 class Process {
   private _size: number
   private _id: string
   private _partition: Partition | null
 
-  constructor(initialSize: number) {
+  constructor(initialSize: number, id: string) {
     this._size = initialSize
-    this._id = randomUUID()
+    this._id = id || randomUUID()
     this._partition = null
   }
 
@@ -69,7 +66,6 @@ class Partition {
     message: "Digite a quantidade de partições",
     min: 1,
     validate: value => value === "" ? "Nenhum número foi digitado. Tente novamente." : true,
-
   })
 
   const partitions: Partition[] = []
@@ -81,6 +77,7 @@ class Partition {
       min: 1,
       validate: value => value === "" ? "Nenhum número foi digitado. Tente novamente." : true,
     })
+
     partitions.push(new Partition(partitionSize))
     if(partitions[i].size > biggestPartition.size) {
       biggestPartition = partitions[i]
@@ -89,42 +86,52 @@ class Partition {
 
   console.clear()
 
-  let processQuantity: number
-  while(true) {
-    const response: { processQuantity: number } = await prompts({
-      type: "number",
-      name: "processQuantity",
-      message: `Digite a quantidade de processos`,
-      min: 1,
-      validate: value => value === "" ? "Nenhum número foi digitado. Tente novamente." : true,
-    })
+  const { processQuantity }: { processQuantity: number } = await prompts({
+    type: "number",
+    name: "processQuantity",
+    message: `Digite a quantidade de processos`,
+    min: 1,
+    validate: processQuantity => {
+      if (processQuantity === "") {
+        return "Nenhum número foi digitado. Tente novamente."
+      } else if (processQuantity > partitionsQuantity) {
+        return "A quantidade de processos deve ser menor ou igual a quantidade de partições."
+      } else return true
+    },
+  })
 
-    processQuantity = response.processQuantity
-
-    if(processQuantity <= partitionsQuantity) break
-    
-    consola.warn("A quantidade de processos deve ser menor ou igual a quantidade de partições.")
-  }
-
-  let processSize: number
   const processes: Process[] = []
   for(let i = 1; i <= processQuantity; i++) {
-    while(true) {
-      const response: { processSize: number } = await prompts({
-        type: "number",
-        name: "processSize",
-        message: `Digite o tamanho do ${i}º processo`,
-        min: 1,
-        validate: value => value === "" ? "Nenhum número foi digitado. Tente novamente." : true,
-      })
+    const { processSize }: { processSize: number } = await prompts({
+      type: "number",
+      name: "processSize",
+      message: `Digite o tamanho do ${i}º processo`,
+      min: 1,
+      validate: processSize => {
+        if (processSize === "") {
+          return "Nenhum número foi digitado. Tente novamente."
+        } else if(processSize > biggestPartition.size) {
+          return "O tamanho do processo não pode ser maior que o tamanho da maior partição."
+        } else return true
+      },
+    })
 
-      processSize = response.processSize
+    const { id }: { id: string } = await prompts({
+      type: "text",
+      name: "id",
+      message: `Digite o ID do ${i}º processo`,
+      validate: id => {
+        if (id === "") {
+          return "ID inválido. Tente novamente."
+        } else if (processes.find(process => process.id === id)) {
+          return "Esse ID já foi utilizado. Tente novamente."
+        } else return true
+      },
+    })
 
-      if(processSize <= biggestPartition.size) break
-      
-      consola.warn("O tamanho do processo não pode ser maior que o tamanho da maior partição.")
-    }
-    processes.push(new Process(processSize))
+    processes.push(new Process(processSize, id))
+
+    console.clear()
   }
 
   console.clear()
